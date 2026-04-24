@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NENBOT Demo</title>
+  <style>
+    :root {
+      --ink: #f5f1df;
+      --muted: #b9c4a8;
+      --panel: rgba(20, 33, 32, 0.86);
+      --panel-strong: rgba(12, 20, 22, 0.94);
+      --line: rgba(188, 218, 136, 0.22);
+      --gold: #e2c35b;
+      --leaf: #86c75d;
+      --aura: #37d4a5;
+      --danger: #ff7b6b;
+      --user: #274f3f;
+      --bot: #172725;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.36);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Trebuchet MS", Verdana, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(55, 212, 165, 0.22), transparent 28rem),
+        radial-gradient(circle at 80% 10%, rgba(226, 195, 91, 0.18), transparent 22rem),
+        linear-gradient(135deg, #081311 0%, #10251f 48%, #081012 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.16;
+      background-image:
+        linear-gradient(30deg, transparent 48%, rgba(245, 241, 223, 0.18) 49%, transparent 51%),
+        linear-gradient(150deg, transparent 48%, rgba(245, 241, 223, 0.12) 49%, transparent 51%);
+      background-size: 58px 58px;
+    }
+
+    .app {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0;
+      position: relative;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 20px;
+      align-items: stretch;
+      margin-bottom: 20px;
+    }
+
+    .brand, .scope-card, .chat-card, .prompt-card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 26px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      padding: 28px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .brand::after {
+      content: "Nen";
+      position: absolute;
+      right: -18px;
+      bottom: -42px;
+      font-family: Georgia, serif;
+      font-size: 136px;
+      color: rgba(226, 195, 91, 0.08);
+      transform: rotate(-8deg);
+    }
+
+    h1 {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(46px, 7vw, 88px);
+      letter-spacing: 0.04em;
+      line-height: 0.9;
+    }
+
+    .subtitle {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 18px;
+      max-width: 680px;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .badge, .meta-chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 11px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.06);
+      font-size: 12px;
+    }
+
+    .scope-card {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .scope-title {
+      color: var(--gold);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 13px;
+    }
+
+    .scope-card p {
+      color: var(--muted);
+      margin: 10px 0 0;
+      line-height: 1.55;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 330px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .chat-card {
+      min-height: 620px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chat-top {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      background: rgba(6, 15, 15, 0.42);
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--aura);
+      box-shadow: 0 0 16px var(--aura);
+    }
+
+    #chat {
+      flex: 1;
+      padding: 22px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 430px;
+      max-height: 560px;
+    }
+
+    .message {
+      width: fit-content;
+      max-width: min(78%, 720px);
+      padding: 13px 15px;
+      border-radius: 18px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      border: 1px solid var(--line);
+      animation: rise 180ms ease-out;
+    }
+
+    .message.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, rgba(39, 79, 63, 0.98), rgba(55, 115, 86, 0.92));
+      border-bottom-right-radius: 5px;
+    }
+
+    .message.bot {
+      align-self: flex-start;
+      background: var(--bot);
+      border-bottom-left-radius: 5px;
+    }
+
+    .message.error {
+      border-color: rgba(255, 123, 107, 0.55);
+      color: #ffd3ce;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 10px;
+    }
+
+    .composer {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto auto;
+      gap: 10px;
+      padding: 16px;
+      border-top: 1px solid var(--line);
+      background: var(--panel-strong);
+    }
+
+    input, button {
+      font: inherit;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      color: var(--ink);
+    }
+
+    input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 14px 15px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: rgba(55, 212, 165, 0.8);
+      box-shadow: 0 0 0 3px rgba(55, 212, 165, 0.12);
+    }
+
+    button {
+      cursor: pointer;
+      padding: 13px 16px;
+      background: rgba(255, 255, 255, 0.07);
+      transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      border-color: rgba(226, 195, 91, 0.65);
+      background: rgba(226, 195, 91, 0.12);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .send {
+      background: linear-gradient(135deg, var(--leaf), #2f956f);
+      color: #07100d;
+      font-weight: 700;
+    }
+
+    .voice-btn.active {
+      border-color: rgba(55, 212, 165, 0.82);
+      background: rgba(55, 212, 165, 0.16);
+      color: #dfffee;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .voice-btn.listening {
+      border-color: rgba(255, 123, 107, 0.82);
+      background: rgba(255, 123, 107, 0.14);
+      box-shadow: 0 0 0 3px rgba(255, 123, 107, 0.1);
+    }
+
+    #voiceInputBtn {
+      user-select: none;
+      touch-action: none;
+    }
+
+    .voice-status {
+      margin-top: 4px;
+    }
+
+    .prompt-card {
+      padding: 20px;
+    }
+
+    .prompt-card h2 {
+      margin: 0 0 12px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 24px;
+    }
+
+    .prompt-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .prompt-list button {
+      text-align: left;
+      line-height: 1.35;
+      color: var(--ink);
+    }
+
+    .note {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .typing {
+      display: inline-flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .typing span {
+      width: 7px;
+      height: 7px;
+      background: var(--aura);
+      border-radius: 50%;
+      animation: pulse 900ms infinite ease-in-out;
+    }
+
+    .typing span:nth-child(2) {
+      animation-delay: 120ms;
+    }
+
+    .typing span:nth-child(3) {
+      animation-delay: 240ms;
+    }
+
+    @keyframes pulse {
+      0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
+      40% { opacity: 1; transform: translateY(-4px); }
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 900px) {
+      .hero, .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .chat-card {
+        min-height: 560px;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .app {
+        width: min(100% - 20px, 1180px);
+        padding: 14px 0;
+      }
+
+      .brand, .scope-card, .prompt-card {
+        border-radius: 20px;
+        padding: 18px;
+      }
+
+      .composer {
+        grid-template-columns: 1fr;
+      }
+
+      .message {
+        max-width: 92%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <div class="brand">
+        <h1>NENBOT</h1>
+        <div class="subtitle">Hunter x Hunter-only AI assistant with local RAG, short-term memory, and structured team lookup.</div>
+        <div class="badge-row">
+          <span class="badge">Scope: Hunter x Hunter + team info only</span>
+          <span class="badge">Memory: last 8 interactions</span>
+          <span class="badge">Model: Groq llama-3.1-8b-instant</span>
+        </div>
+      </div>
+      <aside class="scope-card">
+        <div>
+          <div class="scope-title">What I can answer</div>
+          <p>Characters, Nen, arcs, factions, abilities, lore, events, and the team fields stored in <code>team.json</code>.</p>
+        </div>
+        <div>
+          <div class="scope-title">What I refuse</div>
+          <p>Math, politics, sports, programming help, unrelated anime, and general questions outside the project scope.</p>
+        </div>
+      </aside>
+    </section>
+
+    <section class="layout">
+      <div class="chat-card">
+        <div class="chat-top">
+          <div>
+            <strong>Live Demo Chat</strong>
+            <div class="status"><span class="dot"></span><span id="sessionLabel"></span></div>
+            <div class="status voice-status"><span id="voiceStatus">Voice loading...</span></div>
+          </div>
+          <button id="resetBtn" type="button">Clear memory</button>
+        </div>
+        <div id="chat" aria-live="polite"></div>
+        <form class="composer" id="chatForm">
+          <input id="message" autocomplete="off" placeholder="Ask about Hunter x Hunter or the team..." />
+          <button class="voice-btn" id="voiceInputBtn" type="button" title="Click to talk, click again to stop and send" aria-label="Click to talk, click again to stop and send">Start Mic</button>
+          <button class="send" id="sendBtn" type="submit">Send</button>
+          <button class="voice-btn" id="voiceOutputBtn" type="button" title="Read answers aloud" aria-label="Toggle answer read aloud">Voice off</button>
+          <button id="clearBtn" type="button">Clear UI</button>
+        </form>
+      </div>
+
+      <aside class="prompt-card">
+        <h2>Sample Questions</h2>
+        <div class="prompt-list">
+          <button type="button" data-prompt="Who is Killua Zoldyck?">Who is Killua Zoldyck?</button>
+          <button type="button" data-prompt="Who is kilua?">Typo test: who is kilua?</button>
+          <button type="button" data-prompt="Describe hunter for me">Describe hunter for me</button>
+          <button type="button" data-prompt="Explain Nen simply">Explain Nen simply</button>
+          <button type="button" data-prompt="List all Nen types">List all Nen types</button>
+          <button type="button" data-prompt="What happened in the Chimera Ant arc?">What happened in the Chimera Ant arc?</button>
+          <button type="button" data-prompt="Who are the Phantom Troupe?">Who are the Phantom Troupe?</button>
+          <button type="button" data-prompt="Compare Gon and Killua">Compare Gon and Killua</button>
+          <button type="button" data-prompt="What is Greed Island?">What is Greed Island?</button>
+          <button type="button" data-prompt="What is Bungee Gum?">What is Bungee Gum?</button>
+          <button type="button" data-prompt="Tell me about the team members">Tell me about the team members</button>
+          <button type="button" data-prompt="Who is Fodhil?">Who is Fodhil?</button>
+          <button type="button" data-prompt="What do you remember from our conversation?">What do you remember from our conversation?</button>
+          <button type="button" data-prompt="Tell me about Naruto">Out-of-scope refusal test</button>
+        </div>
+        <div class="note">
+          The demo uses the configured backend URL in <code>config.js</code>. For local testing, run FastAPI on port 8000 and serve this page on port 5500.
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script src="./config.js"></script>
+  <script>
+    const urlApiBase = new URLSearchParams(location.search).get("api");
+    if (urlApiBase) {
+      localStorage.setItem("nenbot_api_base", urlApiBase);
+    }
+    const rawApiBase = window.NENBOT_API_BASE
+      || localStorage.getItem("nenbot_api_base")
+      || (location.protocol === "file:" || location.port === "5500" ? "http://localhost:8000" : "");
+    const API_BASE = rawApiBase.replace(/\/+$/, "");
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("message");
+    const form = document.getElementById("chatForm");
+    const sendBtn = document.getElementById("sendBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const voiceInputBtn = document.getElementById("voiceInputBtn");
+    const voiceOutputBtn = document.getElementById("voiceOutputBtn");
+    const voiceStatus = document.getElementById("voiceStatus");
+    const sessionLabel = document.getElementById("sessionLabel");
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const speechInputSupported = Boolean(SpeechRecognition);
+    const speechOutputSupported = "speechSynthesis" in window;
+    let recognition = null;
+    let isListening = false;
+    let submitVoiceOnEnd = false;
+    let micAccessGranted = false;
+    let voiceStartPending = false;
+    let finalVoiceTranscript = "";
+    let lastVoiceTranscript = "";
+    let voiceOutputEnabled = localStorage.getItem("nenbot_voice_output") === "true";
+
+    const sessionId = getSessionId();
+    sessionLabel.textContent = `Session: ${sessionId}`;
+    initVoiceControls();
+
+    function getSessionId() {
+      const existing = localStorage.getItem("nenbot_session_id");
+      if (existing) return existing;
+      const created = `nenbot-${window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now()}`;
+      localStorage.setItem("nenbot_session_id", created);
+      return created;
+    }
+
+    function addMessage(role, content, meta = null) {
+      const bubble = document.createElement("div");
+      bubble.className = `message ${role}`;
+      const contentNode = document.createElement("span");
+      contentNode.className = "message-content";
+      contentNode.textContent = content;
+      bubble.appendChild(contentNode);
+      bubble.contentNode = contentNode;
+      if (meta) {
+        updateMetadata(bubble, meta);
+      }
+      chat.appendChild(bubble);
+      chat.scrollTop = chat.scrollHeight;
+      return bubble;
+    }
+
+    function updateMetadata(bubble, meta) {
+      const old = bubble.querySelector(".meta");
+      if (old) old.remove();
+      const row = document.createElement("div");
+      row.className = "meta";
+      meta.forEach((item) => {
+        const chip = document.createElement("span");
+          chip.className = "meta-chip";
+        chip.textContent = item;
+        row.appendChild(chip);
+      });
+      bubble.appendChild(row);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function buildMeta(payload, originalText) {
+      const meta = [
+        payload.intent === "team_info" ? "Team info" : payload.intent === "hxh_knowledge" ? "Hunter x Hunter" : "Scope guard",
+        `Style: ${formatQuestionType(payload.question_type || "unknown")}`,
+      ];
+      if (payload.matched_member) {
+        meta.push(`Team member: ${payload.matched_member}`);
+      } else if (payload.detected_entities && payload.detected_entities.length) {
+        meta.push(`Topic: ${payload.detected_entities[0]}`);
+      }
+      meta.push(payload.memory_used ? "Memory used" : "New session context");
+      return meta;
+    }
+
+    function formatQuestionType(value) {
+      return value.replaceAll("_", " ");
+    }
+
+    function addTyping() {
+      const bubble = document.createElement("div");
+      bubble.className = "message bot";
+      bubble.innerHTML = '<span class="typing"><span></span><span></span><span></span></span>';
+      chat.appendChild(bubble);
+      chat.scrollTop = chat.scrollHeight;
+      return bubble;
+    }
+
+    async function sendMessage(message) {
+      const text = (message || input.value).trim();
+      if (!text) return;
+
+      addMessage("user", text);
+      input.value = "";
+      sendBtn.disabled = true;
+      const botBubble = addMessage("bot", "NENBOT is answering...");
+      botBubble.dataset.placeholder = "true";
+
+      try {
+        const response = await fetch(`${API_BASE}/chat/stream`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: sessionId, message: text })
+        });
+
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({ detail: "Backend error." }));
+          botBubble.remove();
+          addMessage("bot error", payload.detail || "Backend error.");
+          return;
+        }
+
+        await readStream(response, botBubble, text);
+      } catch (error) {
+        botBubble.remove();
+        addMessage("bot error", "Cannot reach the backend. Start FastAPI on http://localhost:8000 and try again.");
+      } finally {
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    }
+
+    async function readStream(response, botBubble, originalText) {
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const events = buffer.split("\n\n");
+        buffer = events.pop() || "";
+
+        for (const eventText of events) {
+          handleStreamEvent(eventText, botBubble, originalText);
+        }
+      }
+
+      if (buffer.trim()) {
+        handleStreamEvent(buffer, botBubble, originalText);
+      }
+    }
+
+    function handleStreamEvent(eventText, botBubble, originalText) {
+      const lines = eventText.split("\n");
+      let eventType = "message";
+      let dataText = "";
+
+      lines.forEach((line) => {
+        if (line.startsWith("event:")) eventType = line.replace("event:", "").trim();
+        if (line.startsWith("data:")) dataText += line.replace("data:", "").trim();
+      });
+
+      if (!dataText) return;
+      const data = JSON.parse(dataText);
+
+      if (eventType === "metadata") {
+        updateMetadata(botBubble, buildMeta(data, originalText));
+        return;
+      }
+
+      if (eventType === "done") {
+        delete botBubble.dataset.placeholder;
+        speakBotAnswer(botBubble);
+        return;
+      }
+
+      if (data.token !== undefined) {
+        if (botBubble.dataset.placeholder === "true") {
+          botBubble.contentNode.textContent = "";
+          delete botBubble.dataset.placeholder;
+        }
+        botBubble.contentNode.textContent += data.token;
+        chat.scrollTop = chat.scrollHeight;
+      }
+    }
+
+    async function resetMemory() {
+      resetBtn.disabled = true;
+      try {
+        await fetch(`${API_BASE}/reset`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: sessionId })
+        });
+        addMessage("bot", "Session memory has been reset.");
+      } catch (error) {
+        addMessage("bot error", "Could not reset memory because the backend is unreachable.");
+      } finally {
+        resetBtn.disabled = false;
+      }
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      sendMessage();
+    });
+
+    resetBtn.addEventListener("click", resetMemory);
+    clearBtn.addEventListener("click", () => {
+      chat.innerHTML = "";
+      addMessage("bot", "UI cleared. Backend memory is unchanged unless you click Clear memory.");
+    });
+
+    voiceInputBtn.addEventListener("click", toggleVoiceInput);
+    voiceOutputBtn.addEventListener("click", toggleVoiceOutput);
+
+    document.querySelectorAll("[data-prompt]").forEach((button) => {
+      button.addEventListener("click", () => sendMessage(button.dataset.prompt));
+    });
+
+    addMessage("bot", "Welcome. I answer only Hunter x Hunter questions, project team information, and short usage help.");
+
+    function initVoiceControls() {
+      if (!speechInputSupported) {
+        voiceInputBtn.disabled = true;
+        voiceInputBtn.title = "Voice input is not supported in this browser.";
+      } else {
+        recognition = new SpeechRecognition();
+        recognition.lang = "en-US";
+        recognition.interimResults = true;
+        recognition.continuous = true;
+        recognition.onstart = () => {
+          voiceStartPending = false;
+          isListening = true;
+          finalVoiceTranscript = "";
+          lastVoiceTranscript = "";
+          voiceInputBtn.textContent = "Stop & Send";
+          voiceInputBtn.classList.add("listening");
+          setVoiceStatus("Listening. Click Stop & Send when finished.");
+        };
+        recognition.onresult = (event) => {
+          let interimTranscript = "";
+          let finalTranscript = "";
+          for (let index = event.resultIndex; index < event.results.length; index += 1) {
+            const result = event.results[index];
+            if (result.isFinal) {
+              finalTranscript += result[0].transcript;
+            } else {
+              interimTranscript += result[0].transcript;
+            }
+          }
+          if (finalTranscript.trim()) {
+            finalVoiceTranscript = `${finalVoiceTranscript} ${finalTranscript}`.trim();
+          }
+          const transcript = `${finalVoiceTranscript} ${interimTranscript}`.trim();
+          if (transcript) {
+            lastVoiceTranscript = transcript;
+            input.value = transcript;
+          }
+        };
+        recognition.onerror = (event) => {
+          submitVoiceOnEnd = false;
+          setVoiceStatus(event.error === "not-allowed" ? "Microphone permission denied." : "Voice input stopped.");
+        };
+        recognition.onend = () => {
+          const transcript = (finalVoiceTranscript || lastVoiceTranscript).trim();
+          isListening = false;
+          voiceStartPending = false;
+          voiceInputBtn.textContent = "Start Mic";
+          voiceInputBtn.classList.remove("listening");
+          if (submitVoiceOnEnd && transcript && !sendBtn.disabled) {
+            setVoiceStatus("Voice captured. Sending...");
+            sendMessage(transcript);
+          } else if (submitVoiceOnEnd && !transcript) {
+            setVoiceStatus("No speech detected. Click Start Mic and speak clearly.");
+          } else {
+            setVoiceStatus(statusText());
+          }
+          submitVoiceOnEnd = false;
+        };
+      }
+
+      if (!speechOutputSupported) {
+        voiceOutputEnabled = false;
+        voiceOutputBtn.disabled = true;
+        voiceOutputBtn.title = "Voice output is not supported in this browser.";
+      }
+      updateVoiceOutputButton();
+      setVoiceStatus(statusText());
+    }
+
+    async function toggleVoiceInput(event) {
+      if (event) event.preventDefault();
+      if (!recognition || sendBtn.disabled || voiceStartPending) return;
+      if (isListening) {
+        stopVoiceInput();
+        return;
+      }
+      await startVoiceInput();
+    }
+
+    async function startVoiceInput() {
+      if (isListening || voiceStartPending) return;
+      voiceStartPending = true;
+      setVoiceStatus("Requesting microphone access...");
+      const allowed = await ensureMicAccess();
+      if (!allowed) {
+        voiceStartPending = false;
+        return;
+      }
+      try {
+        if (speechOutputSupported) window.speechSynthesis.cancel();
+        submitVoiceOnEnd = true;
+        input.value = "";
+        recognition.start();
+      } catch (error) {
+        voiceStartPending = false;
+        submitVoiceOnEnd = false;
+        setVoiceStatus("Voice input could not start.");
+      }
+    }
+
+    function stopVoiceInput() {
+      if (!recognition || !isListening) return;
+      submitVoiceOnEnd = true;
+      recognition.stop();
+    }
+
+    async function ensureMicAccess() {
+      if (micAccessGranted) return true;
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        micAccessGranted = true;
+        return true;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((track) => track.stop());
+        micAccessGranted = true;
+        return true;
+      } catch (error) {
+        setVoiceStatus("Microphone permission denied. Allow mic access in the browser.");
+        return false;
+      }
+    }
+
+    function toggleVoiceOutput() {
+      if (!speechOutputSupported) return;
+      voiceOutputEnabled = !voiceOutputEnabled;
+      localStorage.setItem("nenbot_voice_output", String(voiceOutputEnabled));
+      if (!voiceOutputEnabled) {
+        window.speechSynthesis.cancel();
+      }
+      updateVoiceOutputButton();
+      setVoiceStatus(statusText());
+    }
+
+    function updateVoiceOutputButton() {
+      voiceOutputBtn.textContent = voiceOutputEnabled ? "Voice on" : "Voice off";
+      voiceOutputBtn.classList.toggle("active", voiceOutputEnabled);
+      voiceOutputBtn.setAttribute("aria-pressed", String(voiceOutputEnabled));
+    }
+
+    function speakBotAnswer(botBubble) {
+      if (!voiceOutputEnabled || !speechOutputSupported || botBubble.dataset.spoken === "true") return;
+      const text = botBubble.contentNode.textContent.trim();
+      if (!text || botBubble.classList.contains("error")) return;
+      botBubble.dataset.spoken = "true";
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "en-US";
+      utterance.rate = 1;
+      utterance.pitch = 1;
+      utterance.onstart = () => setVoiceStatus("Speaking answer...");
+      utterance.onend = () => setVoiceStatus(statusText());
+      utterance.onerror = () => setVoiceStatus("Voice output stopped.");
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function setVoiceStatus(text) {
+      voiceStatus.textContent = text;
+    }
+
+    function statusText() {
+      const inputState = speechInputSupported ? "Click Start Mic to speak" : "Mic unavailable";
+      const outputState = speechOutputSupported ? (voiceOutputEnabled ? "voice on" : "voice off") : "voice unavailable";
+      return `${inputState}; ${outputState}`;
+    }
+  </script>
+</body>
+</html>
