@@ -1,75 +1,69 @@
 # NENBOT Frontend
 
-Static chat UI for NENBOT. It contains no private secrets. It only needs the public URL of the deployed backend API.
+React + Vite frontend for NENBOT. It contains no private secrets. The browser only needs the public backend URL and the backend handles Groq chat, speech-to-text, and text-to-speech.
 
 ## Frontend Repo Layout
 
 ```text
 nenbot-frontend/
   index.html
-  config.js
-  config.example.js
+  package.json
+  vite.config.js
+  public/
+    config.js
+    config.example.js
+  src/
+    App.jsx
+    main.jsx
+    styles.css
   README.md
 ```
 
-If you copy from the full project, copy the contents of the `frontend/` folder into the frontend GitHub repository.
-
 ## Configure Backend URL
 
-Edit `config.js` before deployment:
+Edit `public/config.js` before deployment:
 
 ```js
 window.NENBOT_API_BASE = "https://your-backend-host.example.com";
 ```
 
-This URL is public and safe to expose. Never put server secrets in frontend files.
+This value is public and safe to expose. Never put server secrets in the frontend.
 
-For local testing, `config.js` can stay empty because the UI falls back to `http://localhost:8000` when served on port `5500`.
-
-You can also override the backend URL in the browser with:
+You can also override the backend URL through the browser:
 
 ```text
 https://your-frontend-host.example.com/?api=https://your-backend-host.example.com
 ```
 
-The value is saved in `localStorage.nenbot_api_base`.
-
 ## Local Run
 
-From the original project root:
+From the `frontend/` directory:
 
 ```powershell
-python -m http.server 5500
+npm install
+npm run dev
 ```
 
 Open:
 
 ```text
-http://localhost:5500/frontend/index.html
+http://localhost:5173
 ```
 
-If the frontend folder is its own repo root, run the same command inside that frontend repo and open:
-
-```text
-http://localhost:5500/
-```
+The frontend falls back to `http://127.0.0.1:8000` for local backend calls during Vite development.
 
 ## Voice Features
 
-The UI includes:
+- `Start Mic`: records real microphone audio with `MediaRecorder`.
+- `Stop & Send`: uploads the recording to `POST /voice/transcribe` and fills the chat box with the transcript.
+- `Voice On`: plays bot answers through `POST /voice/speak`, with browser speech as fallback if server audio is unavailable.
 
-- `Start Mic`: requests microphone access and starts listening.
-- `Stop & Send`: stops listening and sends the transcribed question.
-- `Voice off/on`: toggles speech synthesis for bot answers after streaming completes.
+This is more reliable than browser dictation because transcription happens on the backend through Groq speech-to-text, and you can review the transcript before sending it.
 
-These features use browser Web Speech APIs. For reliable microphone access, use Chrome or Edge on `localhost` during development or HTTPS in production.
+## Production Build
 
-## Hosting
+```powershell
+npm run build
+```
 
-This frontend is static HTML/CSS/JavaScript. It can be hosted on GitHub Pages, Netlify, Vercel static hosting, or any static file host.
-
-Required before publishing:
-
-- Set `window.NENBOT_API_BASE` in `config.js` to the deployed backend URL.
-- Verify the backend allows browser requests. The current FastAPI backend enables CORS.
-- Do not commit private keys or server secrets.
+This creates `frontend/dist/`. The FastAPI backend serves that build automatically when it exists.
