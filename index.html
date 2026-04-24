@@ -471,7 +471,7 @@
     }
     const rawApiBase = window.NENBOT_API_BASE
       || localStorage.getItem("nenbot_api_base")
-      || (location.protocol === "file:" || location.port === "5500" ? "http://localhost:8000" : "");
+      || (location.protocol === "file:" || location.port === "5500" ? "https://nenbot-backend.onrender.com" : "");
     const API_BASE = rawApiBase.replace(/\/+$/, "");
     const chat = document.getElementById("chat");
     const input = document.getElementById("message");
