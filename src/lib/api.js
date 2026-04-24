@@ -1,6 +1,9 @@
-import { API_BASE } from "../config";
+import { API_BASE, API_BASE_ERROR } from "../config";
 
 function apiUrl(path) {
+  if (!API_BASE) {
+    throw new Error(API_BASE_ERROR || "NENBOT backend URL is not configured.");
+  }
   return `${API_BASE}${path}`;
 }
 
@@ -118,4 +121,21 @@ export async function synthesizeSpeech(text) {
   }
 
   return response.blob();
+}
+
+export async function identifyHunterImage(sessionId, file) {
+  const formData = new FormData();
+  formData.append("session_id", sessionId);
+  formData.append("image", file);
+
+  const response = await fetch(apiUrl("/vision/identify"), {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(await readError(response, "NENBOT could not analyze the uploaded image."));
+  }
+
+  return response.json();
 }
